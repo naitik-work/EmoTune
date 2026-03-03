@@ -1,8 +1,9 @@
 const userModel= require("../models/user.model");
+const redis= require("../config/cache");
+const blacklistModel= require("../models/blacklist.model");
 const jwt= require("jsonwebtoken");
 
 async function authMiddleware(req,res,next){
-
     const token= req.cookies.token;
     
     if(!token){
@@ -10,7 +11,6 @@ async function authMiddleware(req,res,next){
             message: "Token not provided."
         })
     }
- 
     const isTokenBlacklisted= await blacklistModel.findOne({token});
     if(isTokenBlacklisted){
         return res.status(401).json({
@@ -19,7 +19,7 @@ async function authMiddleware(req,res,next){
     }
 
     try{
-        const decoded= jwt.verify(token, process.env.JWT_SECRET)
+        const decoded= jwt.verify(token, process.env.JWT_SECRET);
 
         req.user= decoded;
     }
