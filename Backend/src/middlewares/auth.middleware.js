@@ -2,6 +2,7 @@ const userModel= require("../models/user.model");
 const jwt= require("jsonwebtoken");
 
 async function authMiddleware(req,res,next){
+
     const token= req.cookies.token;
     
     if(!token){
@@ -9,7 +10,7 @@ async function authMiddleware(req,res,next){
             message: "Token not provided."
         })
     }
-
+ 
     const isTokenBlacklisted= await blacklistModel.findOne({token});
     if(isTokenBlacklisted){
         return res.status(401).json({
