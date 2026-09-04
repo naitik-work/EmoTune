@@ -1,35 +1,40 @@
-const userModel= require("../models/user.model");
-const redis= require("../config/cache");
-const blacklistModel= require("../models/blacklist.model");
-const jwt= require("jsonwebtoken");
+const blacklistModel = require("../models/blacklist.model");
+const userModel = require("../models/user.model");
+const redis = require("../config/cache")
+const jwt = require("jsonwebtoken");
 
-async function authMiddleware(req,res,next){
-    const token= req.cookies.token;
-    
-    if(!token){
+
+async function authUser(req, res, next) {
+    const token = req.cookies.token;
+
+    if (!token) {
         return res.status(401).json({
-            message: "Token not provided."
-        })
-    }
-    const isTokenBlacklisted= await blacklistModel.findOne({token});
-    if(isTokenBlacklisted){
-        return res.status(401).json({
-            message: "Token is blacklisted. Invalid token."
+            message: "Token not provided"
         })
     }
 
-    try{
-        const decoded= jwt.verify(token, process.env.JWT_SECRET);
+    const isTokenBlacklisted = await redis.get(token)
 
-        req.user= decoded;
-    }
-    catch(err){
+    if (isTokenBlacklisted) {
         return res.status(401).json({
             message: "Invalid token"
         })
     }
-    
-    next()
+
+    try {
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET,
+        )
+
+        req.user = decoded
+
+        next()
+    } catch (err) {
+        return res.status(401).json({
+            message: "Invalid token"
+        })
+    }
 }
 
-module.exports= authMiddleware
+module.exports = { authUser }
